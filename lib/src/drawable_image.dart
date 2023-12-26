@@ -3,6 +3,7 @@ import 'dart:ui' as ui show Codec;
 import 'package:drawable/drawable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 /// Loads the given Android Drawable identified by [name] as an image,
 /// associating it with the given scale.
@@ -28,7 +29,8 @@ class DrawableImage extends ImageProvider<DrawableImage> {
   }
 
   @override
-  ImageStreamCompleter load(DrawableImage key, DecoderCallback decode) {
+  ImageStreamCompleter loadImage(
+      DrawableImage key, ImageDecoderCallback decode) {
     return MultiFrameImageStreamCompleter(
       codec: _loadAsync(key, decode),
       scale: key.scale,
@@ -39,7 +41,8 @@ class DrawableImage extends ImageProvider<DrawableImage> {
     );
   }
 
-  Future<ui.Codec> _loadAsync(DrawableImage key, DecoderCallback decode) async {
+  Future<ui.Codec> _loadAsync(
+      DrawableImage key, ImageDecoderCallback decode) async {
     assert(key == this);
 
     final drawable = await androidDrawable.loadBitmap(name: name);
@@ -49,8 +52,9 @@ class DrawableImage extends ImageProvider<DrawableImage> {
       );
     }
     final bytes = drawable.content;
+    final buffer = await ImmutableBuffer.fromUint8List(bytes);
 
-    return decode(bytes);
+    return decode(buffer);
   }
 
   @override
@@ -62,7 +66,7 @@ class DrawableImage extends ImageProvider<DrawableImage> {
   }
 
   @override
-  int get hashCode => hashValues(name, scale);
+  int get hashCode => Object.hash(name, scale);
 
   @override
   String toString() =>
